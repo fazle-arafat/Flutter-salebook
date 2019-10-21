@@ -1,11 +1,16 @@
 import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart' as geolocator;
+import 'package:geolocator/geolocator.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:geolocator/geolocator.dart';
+
+
 import 'package:location_permissions/location_permissions.dart';
 
+import 'Variables.dart';
 import 'Post.dart';
 
 Future<Post> createPost(String url, {Map body}) async {
@@ -120,44 +125,29 @@ class _MyHomePageState extends State<MyHomePage> {
   //Params: email/phone, password, gpslat, gpslong,imei
   void pushLogin(String phonetext, String passtext) async {
     PermissionStatus chkpermission = await LocationPermissions().checkPermissionStatus();
+    Variables localvariables = new Variables();
+    localvariables.locationList = new List();
     if(chkpermission!=null){
-      print("Login clicked"+chkpermission.toString());
+      print("Login clicked\t\t"+chkpermission.toString());
 
-      var geolocator = Geolocator();
-      var locationOptions = LocationOptions(accuracy: LocationAccuracy.best, distanceFilter: 10);
-      String lat,long;
+     // getUserLocation();
 
 
-      StreamSubscription<Position> positionStream = geolocator.getPositionStream(locationOptions).listen(
-              (Position position)  {
-
-              position==null? 'Unknown': lat=position.latitude.toString(); long=position.longitude.toString();
-
-              lat=position.latitude.toString();
-              long=position.longitude.toString();
-
-
-             //   print(position == null ? 'Unknown' : "Your position is :"+ position.latitude.toString() + ', ' + position.longitude.toString());
-
-
-          });
-
-      try {
-
-            List<Placemark> placemark = await Geolocator()
-            .placemarkFromCoordinates(double.parse(lat), double.parse(long));
-
-            print("New  position is :" + lat + ', ' + long + '\t plasce mark' +
-            placemark.toString());
+      //List<double> _locationList = new List();
+      geolocator.Position position = await geolocator.Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.best);
+      // locationcordinate.add(position.latitude);
+      // locationcordinate.add(position.longitude);
+      localvariables.locationList.add(position.latitude);
+      localvariables.locationList.add(position.longitude);
+      localvariables.latitude=position.latitude;
+      localvariables.longitude=position.longitude;
+      print('Passing prams\t' +phonetext+'\t'+passtext+'\t'+ localvariables.latitude.toString() +'\t'+localvariables.longitude.toString() );
 
 
+     // var currentlocation=  await getUserLocation();
+     // print ("Your current location is "+currentlocation.toString());
 
-      }
-        catch(e) {
-        print('error caught: $e');
 
-      }
-   //   print ("Your Latitude" +lat +"\ & Longitude is "+long);
 
 
     }
@@ -167,6 +157,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
 
 
+  }
+  getUserLocation () async {
+    List<double> _locationList = new List();
+    geolocator.Position position = await geolocator.Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.best);
+   // locationcordinate.add(position.latitude);
+   // locationcordinate.add(position.longitude);
+    _locationList.add(position.latitude);
+    _locationList.add(position.longitude);
+    print(position);
+    return _locationList;
   }
 
   //flush bar
