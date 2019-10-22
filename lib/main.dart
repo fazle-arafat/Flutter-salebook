@@ -11,18 +11,24 @@ import 'package:http/http.dart' as http;
 import 'package:location_permissions/location_permissions.dart';
 
 import 'Variables.dart';
-import 'Post.dart';
+import 'home.dart';
+import 'User.dart';
+/*
+Future<Post> fetchPost() async {
+  final response =
+  await http.get('https://jsonplaceholder.typicode.com/posts/1');
 
-Future<Post> createPost(String url, {Map body}) async {
-  return http.post(url, body: body).then((http.Response response) {
-    final int statusCode = response.statusCode;
+  if (response.statusCode == 200) {
+    // If the call to the server was successful, parse the JSON.
 
-    if (statusCode < 200 || statusCode > 400 || json == null) {
-      throw new Exception("Error while fetching data");
-    }
     return Post.fromJson(json.decode(response.body));
-  });
+  } else {
+    // If that call was not successful, throw an error.
+    throw Exception('Failed to load post');
+  }
 }
+*/
+
 
 
 
@@ -53,9 +59,9 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
 
-  final Future<Post> post;
 
-  MyHomePage({Key key, this.title, this.post}) : super(key: key);
+
+  MyHomePage({Key key, this.title}) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -82,6 +88,43 @@ class _MyHomePageState extends State<MyHomePage> {
   final p_text = TextEditingController();
   bool n_validate = false;
   bool p_validate= false;
+  User user = new User();
+
+  String userid='';
+
+  //List<User> _postList =new List<User>();
+
+
+  //Null empty or zero check
+  bool isNullEmptyFalseOrZero(Object o) =>      o == null || false == o || 0 == o || "" == o;
+
+Future<List<User>> fetchPost(String phonetext, String passtext) async {
+    String phonetxt = phonetext;
+    String passtxt= passtext;
+  //  user.uid='';
+
+    //  final response =    await http.get('http://alkadhum-col.edu.iq/wp-json/wp/v2/posts/');
+    final response =    await http.get('http://182.163.98.60:8070/sbapi/Login.php?email='+phonetext+'&password='+passtext);
+    debugPrint(phonetxt+''+passtxt);
+
+    if (response.statusCode == 200) {
+
+      var jsonresponse = json.decode(response.body);
+      user.uid = jsonresponse['uid'].toString().replaceAll("[\\[\\](){}]","");
+      user.name = jsonresponse['name'].toString().replaceAll("[\\[\\](){}]","");
+      user.org_id = jsonresponse['org_id'].toString().replaceAll("[\\[\\](){}]","");
+      user.phone = jsonresponse['phone'].toString().replaceAll("[\\[\\](){}]","");
+      print (user.uid+'\t'+user.name+'\t'+user.org_id+'\t'+user.phone);
+
+    //return user.uid;
+
+    } else {
+      // If that call was not successful, throw an error.
+      throw Exception('Failed to load API call back');
+    }
+    this.userid = user.uid;
+  }
+
 
 
 
@@ -127,12 +170,12 @@ class _MyHomePageState extends State<MyHomePage> {
     PermissionStatus chkpermission = await LocationPermissions().checkPermissionStatus();
     Variables localvariables = new Variables();
     localvariables.locationList = new List();
+    fetchPost(phonetext, passtext);
+
     if(chkpermission!=null){
       print("Login clicked\t\t"+chkpermission.toString());
 
-     // getUserLocation();
-
-
+      //getting location
       //List<double> _locationList = new List();
       geolocator.Position position = await geolocator.Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.best);
       // locationcordinate.add(position.latitude);
@@ -141,7 +184,9 @@ class _MyHomePageState extends State<MyHomePage> {
       localvariables.locationList.add(position.longitude);
       localvariables.latitude=position.latitude;
       localvariables.longitude=position.longitude;
-      print('Passing prams\t' +phonetext+'\t'+passtext+'\t'+ localvariables.latitude.toString() +'\t'+localvariables.longitude.toString() );
+
+
+
 
 
      // var currentlocation=  await getUserLocation();
@@ -149,6 +194,29 @@ class _MyHomePageState extends State<MyHomePage> {
 
 
 
+     // @override
+     // void initState() {
+
+
+
+     /* if ( isNullEmptyFalseOrZero(fetchPost(phonetext, passtext))|| fetchPost(phonetext, passtext)==null || fetchPost(phonetext, passtext)==''){
+        showWarnFlushbar(context);
+        }
+        else {
+        print('Login Successfull! with '+fetchPost(phonetext, passtext).toString());
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => home()),
+        );
+
+        }*/
+
+     // }
+      print('Passing prams\t' +phonetext+'\t'+passtext+'\t'+ localvariables.latitude.toString() +'\t'+localvariables.longitude.toString()+'\t post'+userid);
+
+if(isNullEmptyFalseOrZero(userid)||userid==null){
+  showWarnFlushbar(context);
+}
 
     }
     else {
@@ -158,18 +226,22 @@ class _MyHomePageState extends State<MyHomePage> {
 
 
   }
-  getUserLocation () async {
-    List<double> _locationList = new List();
-    geolocator.Position position = await geolocator.Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.best);
-   // locationcordinate.add(position.latitude);
-   // locationcordinate.add(position.longitude);
-    _locationList.add(position.latitude);
-    _locationList.add(position.longitude);
-    print(position);
-    return _locationList;
-  }
+
 
   //flush bar
+  void showWarnFlushbar(BuildContext context) {
+    Flushbar(
+      title: 'Opps!',
+      message: 'Loagin faild, check you network or contact with administrator',
+      icon: Icon(
+        Icons.info_outline,
+        size: 28,
+        color: Colors.yellow.shade300,
+      ),
+      leftBarIndicatorColor: Colors.yellowAccent,
+      duration: Duration(seconds: 3),
+    )..show(context);
+  }
   void showErrorFlushbar(BuildContext context, String phone_pass) {
     Flushbar(
       title: 'Warnning!',
@@ -333,4 +405,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
 
 }
+
+
+
 void main() => runApp(MyApp());
